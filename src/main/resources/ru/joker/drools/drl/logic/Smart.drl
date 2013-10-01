@@ -1,0 +1,32 @@
+package ru.joker.drools.drl
+dialect "mvel"
+
+import ru.joker.drools.model.*;
+import ru.joker.drools.marker.*;
+
+global org.slf4j.Logger log;
+
+rule "Tariff -Smart-: free SMS"
+when
+    Day( $period : interval )
+    $customer : Customer( tariff == Tariff.SMART )
+    Charge( $sms : sms, customer == $customer, $period.contains(sms.sent) )
+    accumulate( $c : Charge( customer == $customer, $period.contains(sms.sent), !sms.sent.isAfter($sms.sent) );
+                $count : count( $c );
+                $count <= 10)
+then
+    log.info("Mark {} as free", $sms);
+    insertLogical( new ChargeAsFree($customer, $sms) );
+end
+
+rule "Tariff -Smart-: local SMS"
+when
+    Day( $period : interval)
+    $customer : Customer( tariff == Tariff.SMART )
+    Charge( $sms : sms, customer == $customer, $period.contains(sms.sent) )
+    not ChargeAsFree( customer == $customer, sms == $sms )
+    exists Customer( number == $sms.receiver )
+then
+    log.info("Mark {} as local", $sms);
+    insertLogical( new ChargeAsLocal($customer, $sms) );
+end

@@ -1,0 +1,62 @@
+package ru.joker.drools
+dialect "mvel"
+
+import ru.joker.drools.model.*;
+
+global org.slf4j.Logger log;
+
+rule "Create invoices"
+when
+    Find a customer
+then
+    Create an invoice
+end
+
+rule "Fill billing records"
+salience -100
+when
+    Find a customer
+    Find customer's invoice
+    Find customer's billing record
+then
+    Add the record to the invoice
+end
+
+rule "Calculate total"
+salience -100
+when
+    Find a customer
+    Find customer's invoice
+    Find customer's billing record
+    Proceed if the record is billable
+then
+    Add the amount to the invoice total
+end
+
+rule "Discount '20%': apply fixed fee"
+when
+    Find a customer
+        - contained Discount.TWENTY
+then
+    Create a fixed billing record of 100.0
+end
+
+rule "Discount '20%': refund"
+when
+    Find a customer
+        - contained Discount.TWENTY
+    Calculate total of customer's SMS billing records
+then
+    Create a fixed discount billing record of 20 percent
+end
+
+rule "Discount 'Top 1': refund"
+when
+    Find a customer
+        - contained Discount.TOP_1
+    Find customer's SMS billing record
+    Proceed if all SMS billing records with higher price are already non-billable
+    Proceed if there are no other non-billable records for the customer
+then
+    Mark the billing record as non-billable
+end

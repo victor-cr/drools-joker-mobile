@@ -1,0 +1,46 @@
+package ru.joker.drools
+dialect "mvel"
+
+import ru.joker.drools.model.*;
+import ru.joker.drools.marker.*;
+import java.math.*;
+import org.joda.time.*;
+
+global org.slf4j.Logger log;
+
+rule "Subscription -20%-: refund"
+when
+    $customer : Customer( subscriptions contains Subscription.TWENTY )
+    Charge ( $sms : sms,  customer == $customer )
+    not ChargeAsFree( sms == $sms )
+    not Modifier( sms == $sms, modifier < 0.8 )
+then
+    log.info("Add modifier {} to {}", 0.8, $sms);
+    insertLogical( new Modifier($sms, 0.8) );
+end
+
+rule "Subscription -Double Fifty-: Free SMS"
+when
+    Day( $period : interval )
+    $customer : Customer( subscriptions contains Subscription.DOUBLE_FIFTY )
+    Charge( $sms : sms, customer == $customer, $period.contains(sms.sent) )
+    accumulate( $c : Charge( customer == $customer, $period.contains(sms.sent), sms.sent.isBefore($sms.sent) );
+                $count : count( $c );
+                $count < 20)
+then
+    log.info("Mark {} as free", $sms);
+    insertLogical( new ChargeAsFree($customer, $sms) );
+end
+
+rule "Subscription -Double Fifty-: charge 50% for SMS following after 50th"
+when
+    Day( $period : interval )
+    $customer : Customer( subscriptions contains Subscription.DOUBLE_FIFTY )
+    Charge( $sms : sms, customer == $customer, $period.contains(sms.sent) )
+    accumulate( $c : Charge( customer == $customer, $period.contains(sms.sent), sms.sent.isBefore($sms.sent) );
+                $count : count( $c );
+                $count > 50)
+then
+    log.info("Add modifier {} to {}", 0.5, $sms);
+    insertLogical( new Modifier($sms, 0.5) );
+end

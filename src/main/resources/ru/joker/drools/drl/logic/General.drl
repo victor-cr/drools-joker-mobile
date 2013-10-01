@@ -1,0 +1,30 @@
+package ru.joker.drools
+dialect "mvel"
+
+import ru.joker.drools.model.*;
+import ru.joker.drools.marker.*
+import org.joda.time.*;
+
+global org.slf4j.Logger log;
+
+rule "Generate: daily intervals for billing period based on Sms"
+when
+    $period : Interval()
+    Sms( $sent : sent, $period.contains(sent) )
+    not Day( interval.contains($sent) )
+then
+    DateTime start = $sent.withMillisOfDay(0);
+    log.info("Add full day {}", start);
+    insert( new Day(new Interval(start, start.plusDays(1))) );
+end
+
+rule "Default: sender is in charge"
+when
+    $period : Interval()
+    $sms : Sms( $sender : sender, $period.contains(sent) )
+    $customer : Customer( number == $sender )
+    not Charge( customer != $customer, sms == $sms )
+then
+    log.info("Mark {} as regular", $sms);
+    insertLogical( new Charge($customer, $sms) );
+end

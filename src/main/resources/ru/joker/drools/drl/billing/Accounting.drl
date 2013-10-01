@@ -1,0 +1,141 @@
+package ru.joker.drools
+dialect "mvel"
+
+import ru.joker.drools.model.*;
+import ru.joker.drools.marker.*;
+import java.math.*;
+import org.joda.time.*;
+
+global org.slf4j.Logger log;
+
+rule "Billing: free of charge"
+salience -100
+when
+    ChargeAsFree( $customer : customer, $sms : sms )
+then
+    log.info("Charge {} as {}", $sms, 0.0);
+    insertLogical( new SmsBillingRecord($customer, 0.0, $sms) );
+end
+
+rule "Billing: charge -Simple-"
+salience -100
+when
+    $customer : Customer(tariff == Tariff.SIMPLE)
+    Charge( $sms : sms, customer == $customer )
+    not ChargeAsFree( customer == $customer, sms == $sms )
+    not Modifier( sms == $sms )
+then
+    log.info("Charge {} as {}", $sms, 2.0);
+    insertLogical( new SmsBillingRecord($customer, 2.0, $sms) );
+end
+
+rule "Billing: charge -Simple- with modifier"
+salience -100
+when
+    Charge( $customer : customer, $sms : sms, customer.tariff == Tariff.SIMPLE )
+    not ChargeAsFree( customer == $customer, sms == $sms )
+    Modifier( $modifier : modifier, sms == $sms )
+then
+    log.info("Charge {} as {}", $sms, $modifier * 2.0);
+    insertLogical( new SmsBillingRecord($customer, $modifier * 2.0, $sms) );
+end
+
+rule "Billing: charge local in -Smart- without modifiers"
+salience -100
+when
+    ChargeAsLocal( $customer : customer, $sms : sms, customer.tariff == Tariff.SMART )
+    not ChargeAsFree( customer == $customer, sms == $sms )
+    not Modifier( sms == $sms )
+then
+    log.info("Charge {} as {}", $sms, 1.5);
+    insertLogical( new SmsBillingRecord($customer, 1.5, $sms) );
+end
+
+rule "Billing: charge local in -Smart- with modifiers"
+salience -100
+when
+    ChargeAsLocal( $customer : customer, $sms : sms, customer.tariff == Tariff.SMART )
+    not ChargeAsFree( customer == $customer, sms == $sms )
+    Modifier( $modifier : modifier, sms == $sms )
+then
+    log.info("Charge {} as {}", $sms, $modifier * 1.5);
+    insertLogical( new SmsBillingRecord($customer, $modifier * 1.5, $sms) );
+end
+
+rule "Billing: charge others in -Smart- without modifiers"
+salience -100
+when
+    Charge( $customer : customer, $sms : sms, customer.tariff == Tariff.SMART )
+    not ChargeAsFree( customer == $customer, sms == $sms )
+    not ChargeAsLocal( customer == $customer, sms == $sms )
+    not Modifier( sms == $sms )
+then
+    log.info("Charge {} as {}", $sms, 2.5);
+    insertLogical( new SmsBillingRecord($customer, 2.5, $sms) );
+end
+
+rule "Billing: charge others in -Smart- with modifiers"
+salience -100
+when
+    Charge( $customer : customer, $sms : sms, customer.tariff == Tariff.SMART )
+    not ChargeAsFree( sms == $sms )
+    not ChargeAsLocal( sms == $sms )
+    Modifier( $modifier : modifier, sms == $sms )
+then
+    log.info("Charge {} as {}", $sms, 2.5);
+    insertLogical( new SmsBillingRecord($customer, $modifier * 2.5, $sms) );
+end
+
+rule "Billing: apply fixed fee in -20%- "
+salience -100
+when
+    $customer : Customer( subscriptions contains Subscription.TWENTY )
+then
+    log.info("Charge {} as {}", $customer, 100.0);
+    insertLogical( new FixedBillingRecord($customer, 100.0) );
+end
+
+rule "Billing: refund the most expensive SMS in -Top One-"
+salience -100
+when
+    Day( $period : interval )
+    $customer : Customer( subscriptions contains Subscription.TOP_ONE )
+    $record : SmsBillingRecord( customer == $customer )
+    not SmsBillingRecord( customer == $customer, $period.contains(sms.sent), price > $record.price )
+    not SmsBillingRecord( customer == $customer, sms != $record.sms, $period.contains(sms.sent), price == $record.price )
+then
+    log.info("Refund {}", $record);
+    insertLogical( new Refund($record) );
+end
+
+rule "Fill billing records"
+salience -100
+when
+    $customer : Customer()
+    $record : BillingRecord( customer == $customer )
+    $invoice : Invoice( customer == $customer )
+then
+    log.info("Add {}", $record);
+    $invoice.addRecord($record);
+end
+
+rule "Calculate total"
+salience -100
+when
+    $customer : Customer()
+    $invoice : Invoice( customer == $customer )
+    $record : BillingRecord( $price : price, customer == $customer )
+    not Refund( record == $record )
+then
+    log.info("Sum {}", $price);
+    $invoice.add($price);
+end
+
+rule "Create invoices"
+salience -1000
+when
+    $customer : Customer()
+then
+    log.info("Create invoice");
+    insert( new Invoice($customer) );
+end

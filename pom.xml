@@ -1,0 +1,92 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>ru.joker.drools</groupId>
+    <artifactId>drools-joker-mobile</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0</version>
+
+    <name>Joker Mobile (tm)</name>
+    <url>http://jokerconf.com/</url>
+
+    <scm>
+        <connection>scm:git:git://github.com/victor-cr/uadev-drools-example</connection>
+        <url>http://github.com/victor-cr/uadev-drools-example</url>
+    </scm>
+
+    <repositories>
+        <repository>
+            <id>jboss-public-repository-group</id>
+            <name>JBoss Public Repository Group</name>
+            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+            <layout>default</layout>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!--<org.drools.version>6.0.0.CR4</org.drools.version>-->
+        <org.drools.version>5.5.0.Final</org.drools.version>
+        <jodatime.version>2.3</jodatime.version>
+        <org.slf4j.version>1.7.5</org.slf4j.version>
+    </properties>
+
+    <dependencies>
+        <!-- Internal dependencies -->
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>${jodatime.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-core</artifactId>
+            <version>${org.drools.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-compiler</artifactId>
+            <version>${org.drools.version}</version>
+        </dependency>
+
+        <!-- Needed for logging -->
+        <!--<dependency>-->
+            <!--<groupId>com.thoughtworks.xstream</groupId>-->
+            <!--<artifactId>xstream</artifactId>-->
+            <!--<version>1.3</version>-->
+        <!--</dependency>-->
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${org.slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${org.slf4j.version}</version>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
