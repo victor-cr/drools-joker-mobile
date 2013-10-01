@@ -13,10 +13,10 @@ when
     $customer : Customer( subscriptions contains Subscription.TWENTY )
     Charge ( $sms : sms,  customer == $customer )
     not ChargeAsFree( sms == $sms )
-    not Modifier( sms == $sms, modifier < 0.8 )
+    not Modifier( sms == $sms, modifier < new BigDecimal("0.8") )
 then
-    log.info("Add modifier {} to {}", 0.8, $sms);
-    insertLogical( new Modifier($sms, 0.8) );
+    log.info("Add modifier {} to {}", new BigDecimal("0.8"), $sms);
+    insertLogical( new Modifier($sms, new BigDecimal("0.8")) );
 end
 
 rule "Subscription -Double Fifty-: Free SMS"
@@ -40,7 +40,8 @@ when
     accumulate( $c : Charge( customer == $customer, $period.contains(sms.sent), sms.sent.isBefore($sms.sent) );
                 $count : count( $c );
                 $count > 50)
+    not Modifier( sms == $sms, modifier < new BigDecimal("0.5") )
 then
-    log.info("Add modifier {} to {}", 0.5, $sms);
-    insertLogical( new Modifier($sms, 0.5) );
+    log.info("Add modifier {} to {}", new BigDecimal("0.5"), $sms);
+    insertLogical( new Modifier($sms, new BigDecimal("0.5")) );
 end

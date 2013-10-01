@@ -9,7 +9,6 @@ import ru.joker.drools.model.Subscription;
 import ru.joker.drools.model.Tariff;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 /**
  * JavaDoc here
@@ -18,7 +17,6 @@ import java.math.RoundingMode;
  * @since 29.09.13 14:37
  */
 public class RegularTwentyTest extends AbstractDroolsTest {
-    private static final BigDecimal PRICE = new BigDecimal("2.0").setScale(2, RoundingMode.HALF_UP);
     private static final int HOUR = DateTimeConstants.MILLIS_PER_HOUR;
 
     private final Customer callee = new Customer("007", Tariff.SIMPLE, Subscription.TWENTY);
